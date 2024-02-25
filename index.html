@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/x-icon" href="/img/favicon.ico">
+    <title>Rav Smart Contract Demo</title>
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <!-- Styles -->
+    <link rel="css/main.css">
+  </head>
+  <body>
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-12 text-center" >
+          <img src="img/logo.png" alt="logo" style="zoom: 50%;">
+
+          <h2>Rav Smart Contract Demo - <div id="smart-contract-address">0x39D7439F358401BE87708aE75186a2D45F44BDAB</div></h2>
+
+          <div class="container">
+			<button id="clearLog" type="button" class="btn btn-primary">Clear log</button>
+			<!-- Button trigger fetchTransaction modal -->
+			<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#fetchTransactionModal">Fetch transaction</button>
+			<button id="getAnimalAll" type="button" class="btn btn-primary">Get animals</button>
+			<button id="getAreaAll" type="button" class="btn btn-primary">Get areas</button>
+			<!-- Button trigger addArea modal -->
+			<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addAreaModal">New area</button>
+			<button id="drawArea" type="button" class="btn btn-primary">Draw area</button>
+			<button id="createAnimal" type="button" class="btn btn-primary">Create animal</button>
+			<!-- Button trigger addArea modal -->
+			<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#searchAnimalModal">Search animal</button>
+			<button id="getAnimalsInArea" type="button" class="btn btn-primary">Animals in area</button>
+			<!-- Button trigger catchAnimal modal -->
+			<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#catchAnimalModal">Catch animal</button>
+			<button id="getAnimalCatchedStatus" type="button" class="btn btn-primary">Is catched animal</button>
+			<button id="getUserAll" type="button" class="btn btn-primary">Get users</button>
+          </div>
+
+		  <br>
+
+		  <div id="logger" class="container"></div>
+
+		  <br>
+
+		  <div class="col-lg-12 text-center">
+			<table class="table table-sm">
+				<thead>
+				  <tr>
+					<th scope="col">#</th>
+					<th scope="col">Block Hash</th>
+					<th scope="col">Block Number</th>
+					<th scope="col">From address</th>
+				  </tr>
+				</thead>
+				<tbody id="fetchTransactionTable">
+				</tbody>
+			  </table>
+		  </div>
+
+		  <div class="col-lg-12 text-center">
+			<table class="table table-sm">
+				<thead>
+				  <tr>
+					<th scope="col">#</th>
+					<th scope="col">Animal Id</th>
+					<th scope="col">Area id list</th>
+					<th scope="col">Coordinates list</th>
+				  </tr>
+				</thead>
+				<tbody id="getAnimalAllTable">
+				</tbody>
+			  </table>
+		  </div>
+
+		  <div class="col-lg-12 text-center">
+			<table class="table table-sm">
+				<thead>
+				  <tr>
+					<th scope="col">#</th>
+					<th scope="col">Area Id</th>
+					<th scope="col">Coordinates</th>
+				  </tr>
+				</thead>
+				<tbody id="getAreaAllTable">
+				</tbody>
+			  </table>
+		  </div>
+
+		  <div class="col-lg-12 text-center">
+			<table class="table table-sm">
+				<thead>
+				  <tr>
+					<th scope="col">#</th>
+					<th scope="col">User Id</th>
+					<th scope="col">Address</th>
+					<th scope="col">Animals</th>
+				  </tr>
+				</thead>
+				<tbody id="getUserAllTable">
+				</tbody>
+			  </table>
+		  </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bootstrap -->
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+    
+	<!-- Web3 -->
+	<script src="json/abi.js"></script>
+
+	<script type="module">
+// utils
+		function isNumeric(n) {
+  			return !isNaN(parseFloat(n)) && isFinite(n);
+		}
+
+// base
+		$('#logger').append("<h5>Demo app with ethers.js .</h5>");
+
+		import { ethers } from "https://cdn-cors.ethers.io/lib/ethers-5.5.4.esm.min.js";
+
+		const provider = new ethers.providers.Web3Provider(window.ethereum);
+		const signer = provider.getSigner();
+
+		$('#logger').append("<h5>Loaded Contract ABI from file .</h5>");
+
+		const contractAddress = '0x39D7439F358401BE87708aE75186a2D45F44BDAB';
+		$('#smart-contract-address').val(contractAddress);
+
+		//const myContract = new ethers.Contract(contractAddress, abi, provider); // read only
+		const myContract = new ethers.Contract(contractAddress, abi, signer);
+
+		$('#logger').append("<h5>Loaded contract: " + myContract.address + " .</h5>");
+		console.log(myContract);
+
+
+// clear log
+		export async function clearLog() {
+			$('#logger').html("");
+		}
+
+		document.querySelector('#clearLog').addEventListener('click', clearLog);
+
+
+// fetch transaction
+		export async function fetchTransation() {
+			let txHash = $('#thash').val();
+			if (txHash == 'undefined' || txHash.length == 0) {
+				let rowCount = $('#fetchTransactionTable tr').length;
+				$('#fetchTransactionTable').append("<tr><td>" + (rowCount + 1) + "</td><td>0X00</td><td>---</td><td>0x00</td></tr>");
+
+				return;
+			}
+
+			const tx = await provider.getTransaction(txHash);
+
+			$('#logger').append("<h5>Loaded transaction: " + tx.hash + " .</h5>");
+			console.log(tx);
+
+			let rowCount = $('#fetchTransactionTable tr').length;
+			$('#fetchTransactionTable').append("<tr><td>" + (rowCount + 1) + "</td><td>" + tx.blockHash + "</td><td>" + tx.blockNumber + "</td><td>" + tx.from + "</td></tr>");
+		}
+
+		document.querySelector('#fetchTransaction').addEventListener('click', fetchTransation);
+
+
+// get all animals
+		export async function getAnimalAll() {
+			const ctxAnimalAll = await myContract.getAnimalAll();
+		
+			$('#logger').append("<h5>Loaded all (" + ctxAnimalAll.length + ") animals .</h5>");
+			console.log(ctxAnimalAll);
+
+			$('#getAnimalAllTable').html("");
+			for (let i = 0 ; i < ctxAnimalAll.length; i++) {
+			console.log(ctxAnimalAll[i]);
+				let areasIdString = "[";
+				let coordinatesString = "";
+				for (let j = 0 ; j < ctxAnimalAll[i].occuranceAreas.length ; j++) {
+					areasIdString += ctxAnimalAll[i].occuranceAreas[j].areaId + ",";
+
+					coordinatesString += "[";
+					for (let k = 0 ; k < ctxAnimalAll[i].occuranceAreas[j].coordinates.length ; k++) {
+						coordinatesString += "(" + ctxAnimalAll[i].occuranceAreas[j].coordinates[k].x + ", " + ctxAnimalAll[i].occuranceAreas[j].coordinates[k].y + "),";
+					}
+					coordinatesString = coordinatesString.substring(0, coordinatesString.length - 1);
+					coordinatesString += "],";
+				}
+				areasIdString = areasIdString.substring(0, areasIdString.length - 1);
+				areasIdString += "],";
+
+				areasIdString = areasIdString.substring(0, areasIdString.length - 1);
+				coordinatesString = coordinatesString.substring(0, coordinatesString.length - 1);
+				$('#getAnimalAllTable').append("<tr><td>" + (i + 1) + "</td><td>" + ctxAnimalAll[i].animalId + "</td><td>" + areasIdString + "</td><td>" + coordinatesString + "</td></tr>");
+			}
+		}
+
+		document.querySelector('#getAnimalAll').addEventListener('click', getAnimalAll);
+
+
+// get all areas
+		export async function getAreaAll() {
+			const ctxAreaAll = await myContract.getAreaAll();
+		
+			$('#logger').append("<h5>Loaded all (" + ctxAreaAll.length + ") areas .</h5>");
+			console.log(ctxAreaAll);
+
+			$('#getAreaAllTable').html("");
+			for (let i = 0 ; i < ctxAreaAll.length; i++) {
+				let coordinatesString = "";
+				for (let j = 0 ; j < ctxAreaAll[i].coordinates.length ; j++) {
+					coordinatesString += "(" + ctxAreaAll[i].coordinates[j].x + ", " + ctxAreaAll[i].coordinates[j].y + "),";
+				}
+
+				coordinatesString = coordinatesString.substring(0, coordinatesString.length - 1);
+				$('#getAreaAllTable').append("<tr><td>" + (i + 1) + "</td><td>" + ctxAreaAll[i].areaId + "</td><td>" + coordinatesString + "</td></tr>");
+			}
+		}
+
+		document.querySelector('#getAreaAll').addEventListener('click', getAreaAll);
+
+
+// draw area
+		export async function drawArea() {
+			$('#logger').append("<h5>Called drawArea contract function .</h5>");
+
+			const ctxDrawArea = await myContract.drawArea();
+
+			$('#logger').append("<h5>DrawArea contract function executed .</h5>");
+
+			console.log(ctxDrawArea);
+		}
+
+		document.querySelector('#drawArea').addEventListener('click', drawArea);
+
+
+// get transaction details
+		/*
+		var hash = '0x01080233ccb1b9332bb516f8ef88a7e0cb4ef5d996b16f177b98baf07c86b3f3';
+		const myContractQueryTransaction = await provider.getTransactionReceipt(hash);
+		console.log("myContractQueryTransaction");
+		console.log(myContractQueryTransaction);
+		//*/
+
+
+// add new area coordinates
+		export async function addAreaCoordinate() {
+			let areaCoordinates = $("#addAreaForm").find(".form-row");
+
+			let id = areaCoordinates.length + 1;
+			let formRow = '<div class="form-row">' +
+				'<div class="form-group col-md-6">' +
+					'<label for="coordinate-from-' + id + '">Coordinate X</label>' + 
+					'<input type="text" class="form-control form-control-sm coordinate-from-x" id="coordinate-from-' + id + '" aria-describedby="coordinate-from-help-' + id + '" placeholder="x">' +
+					'<small id="coordinate-from-help-' + id + '" class="form-text text-muted">Number - coordinate x.</small>' +
+				'</div>' +
+				'<div class="form-group col-md-6">' + 
+					'<label for="coordinate-to-' + id + '">Coordinate Y</label>' +
+					'<input type="text" class="form-control form-control-sm coordinate-from-y" id="coordinate-to-' + id + '" aria-describedby="coordinate-to-help-' + id + '" placeholder="y">' +
+					'<small id="coordinate-to-help-' + id + '" class="form-text text-muted">Number - coordinate y.</small>' + 
+					'</div>' +
+				'</div>';
+
+			$('#addAreaForm').append(formRow);
+		}
+
+		document.querySelector('#addAreaCoordinate').addEventListener('click', addAreaCoordinate);
+
+		$('#addAreaModal').on('show.bs.modal', function (event) {
+			let areaCoordinates = $("#addAreaForm").find(".form-row");
+			for (let i = 0 ; i < areaCoordinates.length ; i++) {
+				let inputX = $(areaCoordinates[i]).find(".coordinate-from-x");
+				let inputY = $(areaCoordinates[i]).find(".coordinate-from-y");
+
+				inputX.val('');
+				inputY.val('');
+			}
+		});
+
+		export async function addArea() {
+			let canSave = true;
+			let data = [];
+
+			let areaCoordinates = $("#addAreaForm").find(".form-row");
+			for (let i = 0 ; i < areaCoordinates.length ; i++) {
+				let inputX = $(areaCoordinates[i]).find(".coordinate-from-x");
+				let inputY = $(areaCoordinates[i]).find(".coordinate-from-y");
+
+				let x = inputX.val();
+				let y = inputY.val();
+
+				data.push(new Array(parseFloat(x), parseFloat(y)));
+
+				if (isNumeric(x)) {
+					inputX.addClass('is-valid');
+					inputX.removeClass('is-invalid');
+				} else {
+					canSave = false;
+
+					inputX.addClass('is-invalid');
+					inputX.removeClass('is-valid');
+				}
+
+				if (isNumeric(y)) {
+					inputY.addClass('is-valid');
+					inputY.removeClass('is-invalid');
+				} else {
+					canSave = false;
+
+					inputY.addClass('is-invalid');
+					inputY.removeClass('is-valid');
+				}
+			}
+
+			console.log(canSave);
+			if (!canSave) {
+				return;
+			}
+
+			$('#addAreaModal').modal('hide');
+
+			$('#logger').append("<h5>Called createArea contract function .</h5>");
+
+			const ctxDrawArea = await myContract.createArea(data);
+
+			$('#logger').append("<h5>CreateArea contract function executed .</h5>");
+
+			console.log(ctxDrawArea);
+		}
+
+		document.querySelector('#addArea').addEventListener('click', addArea);
+
+
+// create new animal
+		export async function createAnimal() {
+			$('#logger').append("<h5>Called createAnimal contract function .</h5>");
+
+			const ctxCreateAnimal = await myContract.createAnimal();
+
+			$('#logger').append("<h5>CreateAnimal contract function executed .</h5>");
+
+			console.log(ctxCreateAnimal);
+		}
+
+		document.querySelector('#createAnimal').addEventListener('click', createAnimal);
+
+
+// search animal
+		$('#searchAnimalModal').on('show.bs.modal', function (event) {
+			let coordinate = $("#searchAnimalForm").find(".form-row");
+			let inputX = $(coordinate[0]).find(".as-coordinate-from-x");
+			let inputY = $(coordinate[0]).find(".as-coordinate-from-y");
+
+			inputX.val('');
+			inputY.val('');
+		});
+
+		export async function searchAnimal() {
+			let canSave = true;
+			let data = [];
+
+			let coordinate = $("#searchAnimalForm").find(".form-row");
+			
+			let inputX = $(coordinate[0]).find(".as-coordinate-from-x");
+			let inputY = $(coordinate[0]).find(".as-coordinate-from-y");
+
+			let x = inputX.val();
+			let y = inputY.val();
+
+			data.push(parseFloat(x), parseFloat(y));
+
+			if (isNumeric(x)) {
+				inputX.addClass('is-valid');
+				inputX.removeClass('is-invalid');
+			} else {
+				canSave = false;
+
+				inputX.addClass('is-invalid');
+				inputX.removeClass('is-valid');
+			}
+
+			if (isNumeric(y)) {
+				inputY.addClass('is-valid');
+				inputY.removeClass('is-invalid');
+			} else {
+				canSave = false;
+
+				inputY.addClass('is-invalid');
+				inputY.removeClass('is-valid');
+			}
+
+			console.log(canSave);
+			if (!canSave) {
+				return;
+			}
+
+			$('#searchAnimalModal').modal('hide');
+
+			$('#logger').append("<h5>Called searchAnimal contract function .</h5>");
+
+			const ctxSearchAnimal = await myContract.searchAnimal(x, y);
+
+			$('#logger').append("<h5>SearchAnimal contract function executed .</h5>");
+
+			console.log(ctxSearchAnimal);
+		}
+
+		document.querySelector('#searchAnimal').addEventListener('click', searchAnimal);
+
+
+// get animals in area
+		export async function getAnimalsInArea() {
+			$('#logger').append("<h5>Called getAnimalsInArea contract function .</h5>");
+
+			const ctxGetAnimalsInArea = await myContract.getAnimalsInArea();
+
+			$('#logger').append("<h5>GetAnimalsInArea contract function executed .</h5>");
+
+			console.log(ctxGetAnimalsInArea);
+		}
+
+		document.querySelector('#getAnimalsInArea').addEventListener('click', getAnimalsInArea);
+
+
+// search animal
+		$('#catchAnimalModal').on('show.bs.modal', function (event) {
+			let coordinate = $("#catchAnimalForm").find(".form-row");
+			let inputX = $(coordinate[0]).find(".ac-coordinate-from-x");
+			let inputY = $(coordinate[0]).find(".ac-coordinate-from-y");
+			let inputId = $(coordinate[0]).find(".ac-animal-id");
+			inputX.val('');
+			inputY.val('');
+			inputId.val('');
+		});
+
+		export async function catchAnimal() {
+			let canSave = true;
+			let data = [];
+
+			let coordinate = $("#catchAnimalForm").find(".form-row");
+			
+			let inputX = $(coordinate[0]).find(".ac-coordinate-from-x");
+			let inputY = $(coordinate[0]).find(".ac-coordinate-from-y");
+			let inputId = $(coordinate[0]).find(".ac-animal-id");
+
+			let x = inputX.val();
+			let y = inputY.val();
+			let id = inputId.val();
+
+			data.push(parseFloat(x), parseFloat(y), parseFloat(id));
+
+			if (isNumeric(x)) {
+				inputX.addClass('is-valid');
+				inputX.removeClass('is-invalid');
+			} else {
+				canSave = false;
+
+				inputX.addClass('is-invalid');
+				inputX.removeClass('is-valid');
+			}
+
+			if (isNumeric(y)) {
+				inputY.addClass('is-valid');
+				inputY.removeClass('is-invalid');
+			} else {
+				canSave = false;
+
+				inputY.addClass('is-invalid');
+				inputY.removeClass('is-valid');
+			}
+
+			if (isNumeric(id)) {
+				inputId.addClass('is-valid');
+				inputId.removeClass('is-invalid');
+			} else {
+				canSave = false;
+
+				inputId.addClass('is-invalid');
+				inputId.removeClass('is-valid');
+			}
+
+			console.log(canSave);
+			if (!canSave) {
+				return;
+			}
+
+			$('#catchAnimalModal').modal('hide');
+
+			$('#logger').append("<h5>Called catchAnimal contract function .</h5>");
+
+			const ctxCatchAnimal = await myContract.catchAnimal(x, y, id);
+
+			$('#logger').append("<h5>CatchAnimal contract function executed .</h5>");
+
+			console.log(ctxCatchAnimal);
+		}
+
+		document.querySelector('#catchAnimal').addEventListener('click', catchAnimal);
+
+
+// get animal catched status
+		export async function getAnimalCatchedStatus() {
+			$('#logger').append("<h5>Called getAnimalCatchedStatus contract function .</h5>");
+
+			const ctxGetAnimalCatchedStatus = await myContract.getAnimalCatchedStatus();
+
+			$('#logger').append("<h5>GetAnimalCatchedStatus contract function executed .</h5>");
+
+			console.log(ctxGetAnimalCatchedStatus);
+		}
+
+		document.querySelector('#getAnimalCatchedStatus').addEventListener('click', getAnimalCatchedStatus);
+
+// get users all
+		export async function getUserAll() {
+			const ctxUserAll = await myContract.getUserAll();
+		
+			$('#logger').append("<h5>Loaded all (" + ctxUserAll.length + ") users .</h5>");
+			console.log(ctxUserAll);
+
+			$('#getUserAllTable').html("");
+			for (let i = 0 ; i < ctxUserAll.length; i++) {
+				console.log(ctxUserAll[i]);
+
+				let userString = "[";
+				for (let j = 0 ; j < ctxUserAll[i].userAnimals.length ; j++) {
+					console.log(ctxUserAll[i].userAnimals);
+
+					userString += ctxUserAll[i].userAnimals[j].animalId + ",";
+				}
+				userString = userString.substring(0, userString.length - 1);
+				userString += "]";
+
+				$('#getUserAllTable').append("<tr><td>" + (i + 1) + "</td><td>" + ctxUserAll[i].userId + "</td><td>" + ctxUserAll[i].userAddress + "</td><td>" + userString + "</td></tr>");
+			}
+		}
+
+		document.querySelector('#getUserAll').addEventListener('click', getUserAll);
+	</script>
+
+	<!-- Modal fetchTransaction details-->
+	<div class="modal fade" id="fetchTransactionModal" tabindex="-1" role="dialog" aria-labelledby="fetchTransactionModalLabel" aria-hidden="true">
+		<div class="modal-dialog modal-lg" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="fetchTransactionModalLabel">Fetch transaction</h5>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+			<div class="modal-body">
+				<form>
+					<div class="form-group">
+						<label for="thash">Enter Tx Hash</label>
+            			<input type="text" class="form-control" id="thash" aria-describedby="thashHelp" placeholder="Enter Tx Hash" />
+						<small id="thashHelp" class="form-text text-muted">Enter any transaction hash from BNB network.</small>
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+				<button id="fetchTransaction" type="button" class="btn btn-primary">Fetch details</button>
+			</div>
+		</div>
+		</div>
+	</div>
+
+	<!-- Modal addAreaModal details-->
+	<div class="modal fade" id="addAreaModal" tabindex="-1" role="dialog" aria-labelledby="addAreaModalLabel" aria-hidden="true">
+		<div class="modal-dialog modal-lg" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="addAreaModalLabel">Add area</h5>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+			<div class="modal-body">
+				<form id="addAreaForm">
+					<div class="form-row">
+						<div class="form-group col-md-6">
+							<label for="coordinate-from-1">Coordinate X</label>
+							<input type="text" class="form-control form-control-sm coordinate-from-x" id="coordinate-from-1" aria-describedby="coordinate-from-help-1" placeholder="x">
+							<small id="coordinate-from-help-1" class="form-text text-muted">Number - coordinate x.</small>
+						</div>
+						<div class="form-group col-md-6">
+							<label for="coordinate-to-1">Coordinate Y</label>
+							<input type="text" class="form-control form-control-sm coordinate-from-y" id="coordinate-to-1" aria-describedby="coordinate-to-help-1" placeholder="y">
+							<small id="coordinate-to-help-1" class="form-text text-muted">Number - coordinate y.</small>
+						</div>
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+				<button id="addAreaCoordinate" type="button" class="btn btn-primary">Add coordinate</button>
+				<button id="addArea" type="button" class="btn btn-success">Save area</button>
+			</div>
+		</div>
+		</div>
+	</div>
+
+	<!-- Modal searchAnimalModal details-->
+	<div class="modal fade" id="searchAnimalModal" tabindex="-1" role="dialog" aria-labelledby="searchAnimalModalLabel" aria-hidden="true">
+		<div class="modal-dialog modal-lg" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="searchAnimalModalLabel">Search animal</h5>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+			<div class="modal-body">
+				<form id="searchAnimalForm">
+					<div class="form-row">
+						<div class="form-group col-md-6">
+							<label for="as-coordinate-from">Coordinate X</label>
+							<input type="text" class="form-control form-control-sm as-coordinate-from-x" id="as-coordinate-from" aria-describedby="as-coordinate-from-help" placeholder="x">
+							<small id="as-coordinate-from-help" class="form-text text-muted">Number - coordinate x.</small>
+						</div>
+						<div class="form-group col-md-6">
+							<label for="as-coordinate-to">Coordinate Y</label>
+							<input type="text" class="form-control form-control-sm as-coordinate-from-y" id="as-coordinate-to" aria-describedby="coordinate-to-help" placeholder="y">
+							<small id="as-coordinate-to-help" class="form-text text-muted">Number - coordinate y.</small>
+						</div>
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+				<button id="searchAnimal" type="button" class="btn btn-success">Search animal</button>
+			</div>
+		</div>
+		</div>
+	</div>
+
+	<!-- Modal catchAnimalModal details-->
+	<div class="modal fade" id="catchAnimalModal" tabindex="-1" role="dialog" aria-labelledby="catchAnimalModalLabel" aria-hidden="true">
+		<div class="modal-dialog modal-lg" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="catchAnimalModalLabel">Catch animal</h5>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+			<div class="modal-body">
+				<form id="catchAnimalForm">
+					<div class="form-row">
+						<div class="form-group col-md-4">
+							<label for="ac-coordinate-from">Coordinate X</label>
+							<input type="text" class="form-control form-control-sm ac-coordinate-from-x" id="ac-coordinate-from" aria-describedby="ac-coordinate-from-help" placeholder="x">
+							<small id="ac-coordinate-from-help" class="form-text text-muted">Number - coordinate x.</small>
+						</div>
+						<div class="form-group col-md-4">
+							<label for="ac-coordinate-to">Coordinate Y</label>
+							<input type="text" class="form-control form-control-sm ac-coordinate-from-y" id="ac-coordinate-to" aria-describedby="coordinate-to-help" placeholder="y">
+							<small id="ac-coordinate-to-help" class="form-text text-muted">Number - coordinate y.</small>
+						</div>
+						<div class="form-group col-md-4">
+							<label for="ac-animal-id">Animal id</label>
+							<input type="text" class="form-control form-control-sm ac-animal-id" id="ac-animal-id" aria-describedby="animal-id-help" placeholder="y">
+							<small id="ac-animal-id-help" class="form-text text-muted">Number - animal id.</small>
+						</div>
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+				<button id="catchAnimal" type="button" class="btn btn-success">Catch animal</button>
+			</div>
+		</div>
+		</div>
+	</div>
+  </body>
+</html>
